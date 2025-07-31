@@ -1,37 +1,31 @@
 import streamlit as st
 import pandas as pd
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.options import Options
-import time
+from playwright.sync_api import sync_playwright
 
 st.title("On-Page SEO Automation Tool")
 
 urls_input = st.text_area("Enter URLs (one per line):")
 urls = [url.strip() for url in urls_input.split("\n") if url.strip()]
 
+def fetch_page_content(url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.goto(url, wait_until='networkidle')
+        content = page.content()
+        browser.close()
+        return content
+
 if not urls:
     st.warning("Please enter at least one URL.")
 else:
-    # Setup Headless Chrome for Render
-    chrome_options = Options()
-    chrome_options.binary_location = "/usr/bin/google-chrome"
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-
-    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
-
     results = []
 
     for url in urls:
         try:
-            driver.get(url)
-            time.sleep(3)  # Wait for JS to load
-            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            html_content = fetch_page_content(url)
+            soup = BeautifulSoup(html_content, 'html.parser')
 
             # Extract SEO Elements
             title_tag = soup.title.get_text(strip=True) if soup.title and soup.title.get_text(strip=True) else 'MISSING'
@@ -79,8 +73,6 @@ else:
                 'Canonical Tag': 'ERROR',
                 'Missing ALT Images Count': 'ERROR'
             })
-
-    driver.quit()
 
     df = pd.DataFrame(results)
     st.success("Audit Complete! Download your report below.")
