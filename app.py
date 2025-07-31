@@ -8,19 +8,18 @@ st.title("On-Page SEO Automation Tool")
 urls_input = st.text_area("Enter URLs (one per line):")
 urls = [url.strip() for url in urls_input.split("\n") if url.strip()]
 
-def fetch_page_content(url):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto(url, wait_until='networkidle')
-        content = page.content()
-        browser.close()
-        return content
-
-if not urls:
-    st.warning("Please enter at least one URL.")
-else:
+if st.button("Start Audit") and urls:
+    st.info("Auditing... Please wait.")
     results = []
+
+    def fetch_page_content(url):
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto(url, wait_until='networkidle')
+            content = page.content()
+            browser.close()
+            return content
 
     for url in urls:
         try:
@@ -80,3 +79,6 @@ else:
 
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button("Download CSV", data=csv, file_name='onpage_seo_audit.csv', mime='text/csv')
+
+elif st.button("Start Audit"):
+    st.warning("Please enter at least one URL.")
