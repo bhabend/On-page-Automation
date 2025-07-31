@@ -1,5 +1,4 @@
 streamlit
-selenium
-webdriver-manager
-beautifulsoup4
 pandas
+beautifulsoup4
+playwright
