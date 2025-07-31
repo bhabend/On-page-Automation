@@ -8,7 +8,9 @@ st.title("On-Page SEO Automation Tool")
 urls_input = st.text_area("Enter URLs (one per line):")
 urls = [url.strip() for url in urls_input.split("\n") if url.strip()]
 
-if st.button("Start Audit") and urls:
+start_audit = st.button("Start Audit", key="start_audit_button")
+
+if start_audit and urls:
     st.info("Auditing... Please wait.")
     results = []
 
@@ -80,5 +82,5 @@ if st.button("Start Audit") and urls:
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button("Download CSV", data=csv, file_name='onpage_seo_audit.csv', mime='text/csv')
 
-elif st.button("Start Audit"):
+elif start_audit:
     st.warning("Please enter at least one URL.")
