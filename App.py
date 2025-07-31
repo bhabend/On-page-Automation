@@ -5,7 +5,7 @@ import pandas as pd
 
 st.title("On-Page SEO Automation Tool")
 
-# URL Input
+# URL Input Box
 urls_input = st.text_area("Enter URLs (one per line)", height=200)
 urls = urls_input.strip().split('\n') if urls_input else []
 
@@ -18,19 +18,21 @@ if st.button("Run Audit"):
 
         for url in urls:
             try:
-                response = requests.get(url, timeout=10)
+                response = requests.get(url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
                 soup = BeautifulSoup(response.content, 'html.parser')
 
-                # Extract Title
-                title_tag = soup.title.string.strip() if soup.title else 'MISSING'
+                # Extract Title Tag Safely
+                title_tag = soup.title.get_text(strip=True) if soup.title and soup.title.get_text(strip=True) else 'MISSING'
+                title_len = len(title_tag.encode('utf-8')) if title_tag != 'MISSING' else 0
 
-                # Meta Description
+                # Extract Meta Description Safely
                 meta_tag = soup.find('meta', attrs={'name': 'description'})
-                meta_description = meta_tag['content'].strip() if meta_tag else 'MISSING'
+                meta_description = meta_tag.get('content', '').strip() if meta_tag else 'MISSING'
+                meta_len = len(meta_description.encode('utf-8')) if meta_description != 'MISSING' else 0
 
                 # Canonical Tag
                 canonical_tag = soup.find('link', rel='canonical')
-                canonical_url = canonical_tag['href'] if canonical_tag else 'MISSING'
+                canonical_url = canonical_tag.get('href', '').strip() if canonical_tag else 'MISSING'
 
                 # H1 Tag
                 h1_tag = soup.find('h1')
@@ -41,9 +43,6 @@ if st.button("Run Audit"):
                 missing_alts = [img.get('src') for img in images if not img.get('alt')]
 
                 # Length Validations
-                title_len = len(title_tag) if title_tag != 'MISSING' else 0
-                meta_len = len(meta_description) if meta_description != 'MISSING' else 0
-
                 title_status = 'OK' if 50 <= title_len <= 60 else 'Too Short' if title_len < 50 else 'Too Long'
                 meta_status = 'OK' if 150 <= meta_len <= 160 else 'Too Short' if meta_len < 150 else 'Too Long'
 
@@ -70,12 +69,12 @@ if st.button("Run Audit"):
                     'Missing ALT Images Count': 'ERROR'
                 })
 
-        # Display Results
+        # Show Results in DataFrame
         df = pd.DataFrame(results)
         st.success("Audit Complete! Download your report below.")
         st.dataframe(df)
 
-        # Download CSV
+        # Download Button
         csv = df.to_csv(index=False).encode('utf-8')
         st.download_button(
             "Download CSV",
