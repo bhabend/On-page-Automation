@@ -3,14 +3,13 @@ import requests
 
 SERP_API_KEY = os.getenv('SERPAPI_KEY')
 
-def get_serp_data(keyword, location='United States', language='en'):
+def get_serp_data(keyword, language='en'):
     if not SERP_API_KEY:
         raise ValueError("SERPAPI_KEY is not set in environment variables.")
 
     params = {
         "engine": "google",
         "q": keyword,
-        "location": location,
         "hl": language,
         "num": "10",
         "api_key": SERP_API_KEY
