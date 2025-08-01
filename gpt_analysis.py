@@ -1,6 +1,11 @@
+import os
 import openai
 
-OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY'  # <-- Replace with your actual OpenAI API key
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
+if not OPENAI_API_KEY:
+    raise ValueError("OPENAI_API_KEY is not set in environment variables.")
+
 openai.api_key = OPENAI_API_KEY
 
 def analyze_content_gap(keyword, target_content, competitor_contents):
