@@ -49,4 +49,61 @@ def fetch_page_data(url):
     base_domain = urlparse(url).netloc
 
     for a in soup.find_all("a", href=True):
-        href = urljoin(url, a["h]()
+        href = urljoin(url, a["href"])
+        if base_domain in urlparse(href).netloc:
+            internal_links.append(href)
+        else:
+            external_links.append(href)
+
+    return {
+        "title": title,
+        "meta_description": meta_description,
+        "canonical_url": canonical_url,
+        "headings": headings,
+        "word_count": word_count,
+        "image_count": image_count,
+        "images_missing_alt": images_missing_alt,
+        "internal_links": internal_links,
+        "external_links": external_links
+    }
+
+# ✅ SEO Audit Rule Evaluation
+def audit_seo_rules(data):
+    score = 10
+    issues = []
+
+    if data.get("title") == "No title":
+        score -= 1
+        issues.append("Missing <title> tag.")
+
+    if data.get("meta_description") == "No meta description":
+        score -= 1
+        issues.append("Missing meta description.")
+
+    if data.get("canonical_url") == "No canonical tag":
+        score -= 1
+        issues.append("Missing canonical URL.")
+
+    if data.get("word_count", 0) < 300:
+        score -= 1
+        issues.append("Page has low word count (<300 words).")
+
+    if data.get("image_count", 0) > 0 and len(data.get("images_missing_alt", [])) > 0:
+        score -= 1
+        issues.append("Some images are missing alt attributes.")
+
+    h1_tags = data.get("headings", {}).get("h1", [])
+    if len(h1_tags) != 1:
+        score -= 1
+        issues.append("Page should have exactly one <h1> tag.")
+
+    if len(data.get("internal_links", [])) < 3:
+        score -= 1
+        issues.append("Too few internal links (<3).")
+
+    if len(data.get("external_links", [])) == 0:
+        score -= 1
+        issues.append("No external links found.")
+
+    score = max(0, score)
+    return score, issues
