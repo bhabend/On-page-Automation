@@ -11,6 +11,9 @@ target_url = st.text_input("Enter Your Website URL")
 if st.button("Analyze"):
     with st.spinner("Fetching SERP Data..."):
         serp_data = get_serp_data(keyword)
+        if not serp_data:
+            st.error("Failed to fetch SERP data. Check API Key or API quota.")
+            st.stop()
         st.write("SERP Top 10 Results:", serp_data)
 
     competitors = [site for site in serp_data if target_url not in site['url']][:3]
