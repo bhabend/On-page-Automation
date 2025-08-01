@@ -1,36 +1,35 @@
 import streamlit as st
-import pandas as pd
-from playwright_crawler import fetch_rendered_html
-from seo_audit import audit_seo
-from psi_api import get_pagespeed_data
-from utils import score_page
+from crawler import fetch_page_data
 
 st.set_page_config(page_title="SEO Audit Tool", layout="wide")
 
-st.title("On-Page SEO Audit Tool")
+st.title("🔍 On-Page SEO Audit Tool")
+st.markdown("Enter a webpage URL to perform a basic SEO audit.")
 
-urls_input = st.text_area("Enter URLs (one per line)", height=200)
-start = st.button("Run Audit")
+url = st.text_input("Enter URL:", "https://example.com")
 
-if start and urls_input:
-    urls = [u.strip() for u in urls_input.strip().split("\n") if u.strip()]
-    results = []
+if st.button("Run Audit"):
+    if not url.startswith("http"):
+        st.warning("Please enter a valid URL including http/https.")
+    else:
+        with st.spinner("Fetching page data..."):
+            result = fetch_page_data(url)
 
-    for url in urls:
-        st.write(f"Auditing: {url}")
-        html = fetch_rendered_html(url)
-        if not html:
-            continue
+        if result.get("error"):
+            st.error(f"Error fetching page: {result['error']}")
+        else:
+            st.subheader("✅ Audit Summary")
+            st.markdown(f"**Title:** {result['title']}")
+            st.markdown(f"**Meta Description:** {result['meta_description']}")
+            st.markdown(f"**Canonical URL:** {result['canonical_url']}")
+            st.markdown(f"**Word Count:** {result['word_count']}")
+            st.markdown(f"**Image Count:** {result['image_count']}")
+            st.markdown(f"**Images Missing Alt:** {len(result['images_missing_alt'])}")
+            st.markdown(f"**Internal Links:** {len(result['internal_links'])}")
+            st.markdown(f"**External Links:** {len(result['external_links'])}")
 
-        seo_data = audit_seo(html, url)
-        psi_data = get_pagespeed_data(url)
-        combined = {**seo_data, **psi_data}
-        combined["Score"] = score_page(combined)
-        combined["URL"] = url
-        results.append(combined)
-
-    df = pd.DataFrame(results)
-    st.dataframe(df)
-
-    csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button("Download CSV", csv, "seo_audit_results.csv", "text/csv")
+            st.subheader("🗂️ Headings Overview")
+            for tag, tags_list in result['headings'].items():
+                st.markdown(f"**{tag.upper()} ({len(tags_list)}):**")
+                for t in tags_list:
+                    st.markdown(f"- {t}")
