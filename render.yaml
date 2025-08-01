@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: seo-audit-app
+    env: docker
+    repo: https://github.com/YOUR_USERNAME/On-page-Automation
+    branch: main
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PSI_API_KEY
+        value: your_pagespeed_api_key_here
+    plan: free
