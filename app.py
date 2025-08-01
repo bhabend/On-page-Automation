@@ -8,7 +8,6 @@ st.set_page_config(page_title="SEO Keyword & Content Gap Analyzer", layout="wide
 
 st.title("🔍 SEO Keyword & Content Gap Analyzer")
 
-# Input Section
 keyword = st.text_input("Enter Keyword", "")
 target_url = st.text_input("Enter Your Website URL", "")
 
@@ -17,38 +16,50 @@ if st.button("Analyze") and keyword and target_url:
         serp_results = get_serp_data(keyword)
 
     if serp_results:
-        st.subheader("📈 SERP Top 10 Results:")
+        st.subheader("📈 SERP Top 10 Results")
         for result in serp_results:
-            st.markdown(f"{result['position']}. [{result['title']}]({result['url']})")
+            st.markdown(f"- **{result['position']}. [{result['title']}]({result['url']})**")
 
-        # Identify top 3 competitors (excluding your site)
+        # Filter Competitors (Exclude Target URL)
         competitors = [res for res in serp_results if target_url not in res['url']][:3]
-        st.subheader("⚔️ Top Competitors:")
+        
+        st.subheader("⚔️ Top Competitors Selected for Analysis")
         for comp in competitors:
-            st.markdown(f"{comp['position']}. [{comp['title']}]({comp['url']})")
+            st.markdown(f"- **{comp['position']}. [{comp['title']}]({comp['url']})**")
 
-        # Scrape content for analysis
-        def fetch_text_from_url(url):
+        def fetch_text(url):
             try:
                 response = requests.get(url, timeout=5)
                 soup = BeautifulSoup(response.content, "html.parser")
                 texts = soup.stripped_strings
                 return ' '.join(list(texts)[:500])
             except:
-                return ""
+                return "Content could not be fetched."
 
         with st.spinner("Fetching website content..."):
-            target_content = fetch_text_from_url(target_url)
-            competitor_contents = [fetch_text_from_url(comp['url']) for comp in competitors]
+            target_content = fetch_text(target_url)
+            competitor_contents = [fetch_text(comp['url']) for comp in competitors]
 
-        # Analyze with GPT
-        with st.spinner("Analyzing content gaps with GPT..."):
+        with st.spinner("Analyzing Content Gaps using GPT..."):
             insights = analyze_content_gap(keyword, target_content, competitor_contents)
 
         if insights:
-            st.markdown("### 📊 Content Gap Insights")
-            st.markdown(insights)
+            st.markdown("## 📊 Content Gap Insights")
+
+            # Split GPT Response into Bullet Points
+            sections = insights.split('\n')
+            current_section = ""
+            for line in sections:
+                if line.strip() == "":
+                    continue
+                elif line.strip().endswith(':'):
+                    current_section = line.strip()
+                    st.markdown(f"### {current_section}")
+                elif line.strip().startswith("-") or line.strip().startswith("•"):
+                    st.markdown(f"{line}")
+                else:
+                    st.markdown(f"{line}")
         else:
-            st.error("❌ No insights generated. Please check inputs or try again.")
+            st.error("❌ GPT failed to generate insights. Please retry.")
     else:
         st.error("❌ Failed to fetch SERP data. Check API Key or quota.")
