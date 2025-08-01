@@ -30,4 +30,6 @@ def analyze_content_gap(keyword, target_content, competitor_contents):
     1. Keyword Usage Comparison.
     2. LSI/NLP Terms that my content is missing.
     3. Content Topic Gaps.
-    4. Actionable Suggestions to improv
+    4. Actionable Suggestions to improve ranking.
+    """
+    # <-- Correctly closed the t
