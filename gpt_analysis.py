@@ -1,12 +1,12 @@
 import os
-import openai
+from openai import OpenAI
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY is not set in environment variables.")
 
-openai.api_key = OPENAI_API_KEY
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 def analyze_content_gap(keyword, target_content, competitor_contents):
     prompt = f"""
@@ -30,8 +30,11 @@ def analyze_content_gap(keyword, target_content, competitor_contents):
     3. Content Topic Gaps.
     4. Actionable Suggestions to improve ranking.
     """
-    response = openai.ChatCompletion.create(
+
+    response = client.chat.completions.create(
         model="gpt-4",
-        messages=[{"role": "user", "content": prompt}]
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
     )
-    return response['choices'][0]['message']['content']
+    return response.choices[0].message.content
