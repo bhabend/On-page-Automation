@@ -1,38 +1,47 @@
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse, urljoin
+def audit_seo_rules(data):
+    issues = []
+    score = 100
 
-def audit_seo(html, base_url):
-    soup = BeautifulSoup(html, "html.parser")
+    # Title check
+    title = data.get('title', '')
+    if not title:
+        issues.append("❌ Missing title tag.")
+        score -= 10
+    elif not (50 <= len(title) <= 60):
+        issues.append(f"⚠️ Title length is {len(title)} characters.")
+        score -= 5
 
-    title = soup.title.string.strip() if soup.title else "Missing"
-    meta_desc_tag = soup.find("meta", attrs={"name": "description"})
-    meta_desc = meta_desc_tag["content"].strip() if meta_desc_tag else "Missing"
-    canonical = soup.find("link", rel="canonical")
-    canonical = canonical["href"] if canonical else "Missing"
-    h_tags = {f"H{i}": [h.text.strip() for h in soup.find_all(f"h{i}")] for i in range(1, 7)}
-    images = soup.find_all("img")
-    missing_alts = [img for img in images if not img.get("alt")]
-    links = soup.find_all("a", href=True)
+    # Meta description check
+    meta = data.get('meta_description', '')
+    if not meta:
+        issues.append("❌ Missing meta description.")
+        score -= 10
 
-    internal_links, external_links = 0, 0
-    domain = urlparse(base_url).netloc
-    for link in links:
-        href = urlparse(link['href'])
-        if href.netloc and href.netloc != domain:
-            external_links += 1
-        else:
-            internal_links += 1
+    # H1 tag check
+    h1s = data.get('h1', [])
+    if len(h1s) == 0:
+        issues.append("❌ No H1 tag found.")
+        score -= 10
+    elif len(h1s) > 1:
+        issues.append(f"⚠️ Multiple H1 tags found ({len(h1s)}).")
+        score -= 5
 
-    word_count = len(soup.get_text().split())
+    # Canonical tag check
+    if not data.get('canonical'):
+        issues.append("⚠️ No canonical tag found.")
+        score -= 5
 
-    return {
-        "Title": title,
-        "Meta Description": meta_desc,
-        "Canonical": canonical,
-        "Word Count": word_count,
-        "Image Count": len(images),
-        "Missing Alts": len(missing_alts),
-        "Internal Links": internal_links,
-        "External Links": external_links,
-        "H Tags": h_tags,
-    }
+    # Alt tag check
+    if data.get('images_missing_alt', 0) > 0:
+        issues.append(f"⚠️ {data['images_missing_alt']} images missing alt attributes.")
+        score -= 5
+
+    # Robots tag
+    if not data.get('robots'):
+        issues.append("⚠️ No meta robots tag found.")
+
+    # Score bounds
+    if score < 0:
+        score = 0
+
+    return score, issues
