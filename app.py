@@ -1,5 +1,6 @@
 import streamlit as st
 from crawler import fetch_page_data
+from seo_audit import audit_seo_rules  # 🔧 New import
 
 st.set_page_config(page_title="SEO Audit Tool", layout="wide")
 
@@ -18,6 +19,22 @@ if st.button("Run Audit"):
         if result.get("error"):
             st.error(f"Error fetching page: {result['error']}")
         else:
+            # 🧠 Perform SEO Audit Scoring
+            score, issues = audit_seo_rules(result)
+
+            # 📊 Display the Score
+            st.subheader("📈 SEO Score")
+            st.markdown(f"**Score:** {score}/100")
+
+            # ⚠️ Show Issues
+            st.subheader("⚠️ Detected SEO Issues")
+            if issues:
+                for issue in issues:
+                    st.warning(f"- {issue}")
+            else:
+                st.success("🎉 No major SEO issues found!")
+
+            # ✅ Display Summary
             st.subheader("✅ Audit Summary")
             st.markdown(f"**Title:** {result['title']}")
             st.markdown(f"**Meta Description:** {result['meta_description']}")
