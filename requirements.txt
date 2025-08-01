@@ -1,4 +1,6 @@
 streamlit
-pandas
 beautifulsoup4
 playwright
+pandas
+requests
+lxml
