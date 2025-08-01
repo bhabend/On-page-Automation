@@ -1,7 +1,6 @@
 import streamlit as st
-from serp_api import get_serp_data
+from serp import get_serp_data
 from content_extractor import extract_content
-from gpt_analysis import analyze_content_gap
 import pandas as pd
 
 st.set_page_config(page_title="SEO Keyword & Content Gap Analyzer", layout="wide")
@@ -29,34 +28,38 @@ if submit_button:
             for result in serp_results:
                 st.markdown(f"**{result['position']}. [{result['title']}]({result['url']})**")
 
-            # Extract Contents
-            with st.spinner("Extracting website and competitor content..."):
+            # Extract Your Website Content
+            with st.spinner("Extracting your website content..."):
                 target_content = extract_content(website_url)
-                competitor_contents = []
-                for comp in serp_results[:3]:
+            
+            st.subheader("📝 Your Website Content Preview")
+            st.write(target_content[:500] + " ...")  # Show first 500 characters
+
+            # Extract Competitor Contents
+            st.subheader("📰 Competitor Content Extracts")
+            competitor_contents = []
+            for idx, comp in enumerate(serp_results[:3]):
+                with st.spinner(f"Fetching Competitor {idx+1} Content..."):
                     comp_content = extract_content(comp['url'])
                     competitor_contents.append(comp_content)
+                    st.markdown(f"**Competitor {idx+1}: [{comp['title']}]({comp['url']})**")
+                    st.write(comp_content[:500] + " ...")  # Show first 500 characters
 
-            # Analyze Content Gap
-            with st.spinner("Analyzing content gap with GPT..."):
-                insights = analyze_content_gap(keyword, target_content, competitor_contents)
+            # --- MOCKED GPT RESPONSE ---
+            st.subheader("🧠 GPT-Powered SEO Gap Insights")
+            demo_insights = f"""
+            - Your content lacks coverage on recent **NLP/LSI terms** like "on-chain metrics" and "Layer 2 scaling solutions".
+            - Competitors are integrating more visual data (infographics, charts).
+            - Suggested Action: Add a section on 'Ethereum's Future Roadmap', optimize H2 tags with variants of '{keyword}', and increase internal linking.
+            """
+            st.info(demo_insights)
 
-            # Display Insights
-            if insights:
-                st.markdown("---")
-                st.subheader("🧠 GPT-Powered SEO Gap Insights")
-                st.markdown(f"✅ **Keyword:** `{keyword}`")
-                st.markdown("### 🔎 Analysis & Recommendations")
-                st.info(insights)
-
-                # CSV Export Button
-                csv_data = pd.DataFrame([{"Keyword": keyword, "Insights": insights}])
-                csv = csv_data.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label="📥 Download Insights as CSV",
-                    data=csv,
-                    file_name=f"{keyword}_SEO_Insights.csv",
-                    mime='text/csv',
-                )
-            else:
-                st.error("Content gap analysis returned no insights. Please retry.")
+            # CSV Export Button
+            csv_data = pd.DataFrame([{"Keyword": keyword, "Insights": demo_insights}])
+            csv = csv_data.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Download Insights as CSV",
+                data=csv,
+                file_name=f"{keyword}_SEO_Insights.csv",
+                mime='text/csv',
+            )
