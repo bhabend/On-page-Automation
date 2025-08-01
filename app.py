@@ -1,5 +1,5 @@
 import streamlit as st
-from serp import get_serp_data
+from serp_api import get_serp_data
 from content_extractor import extract_content
 from gpt_analysis import analyze_content_gap
 import pandas as pd
