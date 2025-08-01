@@ -1,52 +1,27 @@
 import streamlit as st
-from crawler import fetch_page_data
-from seo_audit import audit_seo_rules  # 🔧 New import
+from serp_api import get_serp_data
+from content_extractor import fetch_page_content
+from gpt_analysis import analyze_content_gap
 
-st.set_page_config(page_title="SEO Audit Tool", layout="wide")
+st.title("SEO Keyword & Content Gap Analyzer")
 
-st.title("🔍 On-Page SEO Audit Tool")
-st.markdown("Enter a webpage URL to perform a basic SEO audit.")
+keyword = st.text_input("Enter Keyword")
+target_url = st.text_input("Enter Your Website URL")
 
-url = st.text_input("Enter URL:", "https://example.com")
+if st.button("Analyze"):
+    with st.spinner("Fetching SERP Data..."):
+        serp_data = get_serp_data(keyword)
+        st.write("SERP Top 10 Results:", serp_data)
 
-if st.button("Run Audit"):
-    if not url.startswith("http"):
-        st.warning("Please enter a valid URL including http/https.")
-    else:
-        with st.spinner("Fetching page data..."):
-            result = fetch_page_data(url)
+    competitors = [site for site in serp_data if target_url not in site['url']][:3]
+    st.write("Top Competitors:", competitors)
 
-        if result.get("error"):
-            st.error(f"Error fetching page: {result['error']}")
-        else:
-            # 🧠 Perform SEO Audit Scoring
-            score, issues = audit_seo_rules(result)
+    with st.spinner("Fetching Competitor Content..."):
+        target_content = fetch_page_content(target_url)
+        competitor_contents = [fetch_page_content(c['url']) for c in competitors]
 
-            # 📊 Display the Score
-            st.subheader("📈 SEO Score")
-            st.markdown(f"**Score:** {score}/100")
+    with st.spinner("Analyzing Content Gap using AI..."):
+        insights = analyze_content_gap(keyword, target_content, competitor_contents)
 
-            # ⚠️ Show Issues
-            st.subheader("⚠️ Detected SEO Issues")
-            if issues:
-                for issue in issues:
-                    st.warning(f"- {issue}")
-            else:
-                st.success("🎉 No major SEO issues found!")
-
-            # ✅ Display Summary
-            st.subheader("✅ Audit Summary")
-            st.markdown(f"**Title:** {result['title']}")
-            st.markdown(f"**Meta Description:** {result['meta_description']}")
-            st.markdown(f"**Canonical URL:** {result['canonical_url']}")
-            st.markdown(f"**Word Count:** {result['word_count']}")
-            st.markdown(f"**Image Count:** {result['image_count']}")
-            st.markdown(f"**Images Missing Alt:** {len(result['images_missing_alt'])}")
-            st.markdown(f"**Internal Links:** {len(result['internal_links'])}")
-            st.markdown(f"**External Links:** {len(result['external_links'])}")
-
-            st.subheader("🗂️ Headings Overview")
-            for tag, tags_list in result['headings'].items():
-                st.markdown(f"**{tag.upper()} ({len(tags_list)}):**")
-                for t in tags_list:
-                    st.markdown(f"- {t}")
+    st.subheader("Content Gap Insights")
+    st.write(insights)
