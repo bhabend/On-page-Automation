@@ -55,4 +55,29 @@ def audit_seo_rules(data):
         issues.append("Title tag is too long.")
         score -= 5
 
-    if data.get('meta_description') == "No m_
+    if data.get('meta_description') == "No meta description":
+        issues.append("Missing meta description.")
+        score -= 5
+
+    if data.get('canonical_url') == "No canonical tag":
+        issues.append("Missing canonical URL.")
+        score -= 5
+
+    missing_alts = data.get('images_missing_alt', [])
+    if len(missing_alts) > 0:
+        issues.append("Some images are missing alt attributes.")
+        score -= 5
+
+    if data.get('word_count', 0) < 300:
+        issues.append("Low word count.")
+        score -= 5
+
+    if len(data.get('headings', {}).get("h1", [])) != 1:
+        issues.append("There should be exactly one H1 tag.")
+        score -= 5
+
+    if len(data.get('internal_links', [])) < 3:
+        issues.append("Too few internal links.")
+        score -= 5
+
+    return max(score, 0), issues
