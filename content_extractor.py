@@ -1,18 +1,20 @@
 import requests
 from bs4 import BeautifulSoup
 
-def fetch_page_content(url):
+def extract_content(url):
     try:
-        response = requests.get(url, timeout=10)
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            return "Failed to fetch content."
+
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        title = soup.title.string if soup.title else ''
-        meta_desc = soup.find('meta', attrs={'name': 'description'})
-        meta_desc = meta_desc['content'] if meta_desc else ''
+        # Extract main textual content
+        paragraphs = soup.find_all('p')
+        content = ' '.join([para.get_text() for para in paragraphs])
 
-        h1 = soup.find('h1')
-        h1_text = h1.get_text().strip() if h1 else ''
-
-        return f"Title: {title}\nDescription: {meta_desc}\nH1: {h1_text}"
-    except:
-        return "Content fetch failed."
+        return content.strip() if content else "No meaningful content found."
+    except Exception as e:
+        print(f"Error extracting content from {url}: {e}")
+        return "Error fetching content."
