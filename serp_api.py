@@ -22,5 +22,5 @@ def get_serp_data(keyword, language='en'):
     if 'organic_results' in results:
         return [{"position": item.get('position'), "title": item.get('title'), "url": item.get('link')} for item in results['organic_results']]
     else:
-        print("SerpAPI Response Error:", results)  # Debugging Line
+        print("SerpAPI Response Error:", results)
         return []
