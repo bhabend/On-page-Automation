@@ -3,7 +3,7 @@ import requests
 
 SERP_API_KEY = os.getenv('SERPAPI_KEY')
 
-def get_serp_data(keyword, location='us', language='en'):
+def get_serp_data(keyword, location='United States', language='en'):
     if not SERP_API_KEY:
         raise ValueError("SERPAPI_KEY is not set in environment variables.")
 
@@ -21,7 +21,7 @@ def get_serp_data(keyword, location='us', language='en'):
     results = response.json()
 
     if 'organic_results' in results:
-        return [{"position": item['position'], "title": item['title'], "url": item['link']} for item in results['organic_results']]
+        return [{"position": item.get('position'), "title": item.get('title'), "url": item.get('link')} for item in results['organic_results']]
     else:
-        print("SerpAPI Response:", results)  # Debugging line to see API response in Render Logs
+        print("SerpAPI Response Error:", results)  # Debugging Line
         return []
