@@ -1,30 +1,54 @@
 import streamlit as st
 from serp_api import get_serp_data
-from content_extractor import fetch_page_content
 from gpt_analysis import analyze_content_gap
+import requests
+from bs4 import BeautifulSoup
 
-st.title("SEO Keyword & Content Gap Analyzer")
+st.set_page_config(page_title="SEO Keyword & Content Gap Analyzer", layout="wide")
 
-keyword = st.text_input("Enter Keyword")
-target_url = st.text_input("Enter Your Website URL")
+st.title("🔍 SEO Keyword & Content Gap Analyzer")
 
-if st.button("Analyze"):
-    with st.spinner("Fetching SERP Data..."):
-        serp_data = get_serp_data(keyword)
-        if not serp_data:
-            st.error("Failed to fetch SERP data. Check API Key or API quota.")
-            st.stop()
-        st.write("SERP Top 10 Results:", serp_data)
+# Input Section
+keyword = st.text_input("Enter Keyword", "")
+target_url = st.text_input("Enter Your Website URL", "")
 
-    competitors = [site for site in serp_data if target_url not in site['url']][:3]
-    st.write("Top Competitors:", competitors)
+if st.button("Analyze") and keyword and target_url:
+    with st.spinner("Fetching SERP data..."):
+        serp_results = get_serp_data(keyword)
 
-    with st.spinner("Fetching Competitor Content..."):
-        target_content = fetch_page_content(target_url)
-        competitor_contents = [fetch_page_content(c['url']) for c in competitors]
+    if serp_results:
+        st.subheader("📈 SERP Top 10 Results:")
+        for result in serp_results:
+            st.markdown(f"{result['position']}. [{result['title']}]({result['url']})")
 
-    with st.spinner("Analyzing Content Gap using AI..."):
-        insights = analyze_content_gap(keyword, target_content, competitor_contents)
+        # Identify top 3 competitors (excluding your site)
+        competitors = [res for res in serp_results if target_url not in res['url']][:3]
+        st.subheader("⚔️ Top Competitors:")
+        for comp in competitors:
+            st.markdown(f"{comp['position']}. [{comp['title']}]({comp['url']})")
 
-    st.subheader("Content Gap Insights")
-    st.write(insights)
+        # Scrape content for analysis
+        def fetch_text_from_url(url):
+            try:
+                response = requests.get(url, timeout=5)
+                soup = BeautifulSoup(response.content, "html.parser")
+                texts = soup.stripped_strings
+                return ' '.join(list(texts)[:500])
+            except:
+                return ""
+
+        with st.spinner("Fetching website content..."):
+            target_content = fetch_text_from_url(target_url)
+            competitor_contents = [fetch_text_from_url(comp['url']) for comp in competitors]
+
+        # Analyze with GPT
+        with st.spinner("Analyzing content gaps with GPT..."):
+            insights = analyze_content_gap(keyword, target_content, competitor_contents)
+
+        if insights:
+            st.markdown("### 📊 Content Gap Insights")
+            st.markdown(insights)
+        else:
+            st.error("❌ No insights generated. Please check inputs or try again.")
+    else:
+        st.error("❌ Failed to fetch SERP data. Check API Key or quota.")
