@@ -1,47 +1,58 @@
+from bs4 import BeautifulSoup
+import requests
+from urllib.parse import urlparse, urljoin
+
+def fetch_page_data(url):
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+    except Exception as e:
+        return {"error": str(e)}
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    title = soup.title.string.strip() if soup.title else "No title found"
+    meta_desc_tag = soup.find("meta", attrs={"name": "description"})
+    meta_desc = meta_desc_tag["content"].strip() if meta_desc_tag and "content" in meta_desc_tag.attrs else "No meta description"
+
+    canonical_tag = soup.find("link", rel="canonical")
+    canonical_url = canonical_tag["href"] if canonical_tag and "href" in canonical_tag.attrs else "No canonical tag"
+
+    word_count = len(soup.get_text().split())
+
+    images = soup.find_all("img")
+    image_count = len(images)
+    images_missing_alt = [img for img in images if not img.get("alt")]
+
+    links = soup.find_all("a", href=True)
+    parsed_url = urlparse(url)
+    base_domain = parsed_url.netloc
+
+    internal_links = [a["href"] for a in links if urlparse(urljoin(url, a["href"])).netloc == base_domain]
+    external_links = [a["href"] for a in links if urlparse(urljoin(url, a["href"])).netloc != base_domain]
+
+    headings = {}
+    for tag in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+        headings[tag] = [h.get_text(strip=True) for h in soup.find_all(tag)]
+
+    return {
+        "title": title,
+        "meta_description": meta_desc,
+        "canonical_url": canonical_url,
+        "word_count": word_count,
+        "image_count": image_count,
+        "images_missing_alt": images_missing_alt,
+        "internal_links": internal_links,
+        "external_links": external_links,
+        "headings": headings,
+    }
+
 def audit_seo_rules(data):
-    issues = []
     score = 100
+    issues = []
 
-    # Title check
-    title = data.get('title', '')
-    if not title:
-        issues.append("❌ Missing title tag.")
-        score -= 10
-    elif not (50 <= len(title) <= 60):
-        issues.append(f"⚠️ Title length is {len(title)} characters.")
+    if len(data.get('title', '')) > 60:
+        issues.append("Title tag is too long.")
         score -= 5
 
-    # Meta description check
-    meta = data.get('meta_description', '')
-    if not meta:
-        issues.append("❌ Missing meta description.")
-        score -= 10
-
-    # H1 tag check
-    h1s = data.get('h1', [])
-    if len(h1s) == 0:
-        issues.append("❌ No H1 tag found.")
-        score -= 10
-    elif len(h1s) > 1:
-        issues.append(f"⚠️ Multiple H1 tags found ({len(h1s)}).")
-        score -= 5
-
-    # Canonical tag check
-    if not data.get('canonical'):
-        issues.append("⚠️ No canonical tag found.")
-        score -= 5
-
-    # Alt tag check
-    if data.get('images_missing_alt', 0) > 0:
-        issues.append(f"⚠️ {data['images_missing_alt']} images missing alt attributes.")
-        score -= 5
-
-    # Robots tag
-    if not data.get('robots'):
-        issues.append("⚠️ No meta robots tag found.")
-
-    # Score bounds
-    if score < 0:
-        score = 0
-
-    return score, issues
+    if data.get('meta_description') == "No m_
